@@ -34,10 +34,15 @@ public class LabelSeeker {
         List<Pair<String, Double>> result = new ArrayList<Pair<String, Double>>();
         for (String label: labelsUsed) {
             INDArray vecLabel = lookupTable.vector(label);
-            if (vecLabel == null) throw new IllegalStateException("Label '"+ label+"' has no known vector!");
+//            if (vecLabel == null) throw new IllegalStateException("Label '"+ label+"' has no known vector!");
+//
+//            double sim = Transforms.cosineSim(vector, vecLabel);
+//            result.add(new Pair<String, Double>(label, sim));
+            if (vecLabel != null) {
+                double sim = Transforms.cosineSim(vector, vecLabel);
+                result.add(new Pair<String, Double>(label, sim));
+            }
 
-            double sim = Transforms.cosineSim(vector, vecLabel);
-            result.add(new Pair<String, Double>(label, sim));
         }
         return result;
     }

@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JSONLabelIterator implements LabelAwareIterator {
-    private JSONObject root;
     private JSONArray lista;
     private Integer index = 0;
     protected LabelsSource labelsSource;
@@ -51,6 +50,7 @@ public class JSONLabelIterator implements LabelAwareIterator {
 
     private void fillLabels() {
         List<String> labels = new ArrayList<String>();
+        labels.add("0");
         labels.add("1");
         labels.add("2");
         labels.add("3");
@@ -65,7 +65,7 @@ public class JSONLabelIterator implements LabelAwareIterator {
     }
 
     public JSONLabelIterator(@NonNull String filePath) throws FileNotFoundException {
-        this((InputStream) (new FileInputStream(filePath)));
+        this(new FileInputStream(filePath));
     }
 
     public boolean hasNextDocument() {
@@ -83,7 +83,9 @@ public class JSONLabelIterator implements LabelAwareIterator {
         try {
             LabelledDocument document = new LabelledDocument();
             document.setContent(texto);
-            document.setLabel(String.valueOf(nota.intValue()));
+            int convNota = nota.intValue();
+//            convNota = convNota - (convNota % 2);
+            document.setLabel(String.valueOf(convNota));
 
             return document;
         } catch (Exception e) {

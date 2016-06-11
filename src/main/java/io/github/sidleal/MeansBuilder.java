@@ -40,16 +40,23 @@ public class MeansBuilder {
         for (String word: documentAsTokens) {
             if (vocabCache.containsWord(word)) cnt.incrementAndGet();
         }
-        INDArray allWords = Nd4j.create(cnt.get(), lookupTable.layerSize());
 
-        cnt.set(0);
-        for (String word: documentAsTokens) {
-            if (vocabCache.containsWord(word))
-                allWords.putRow(cnt.getAndIncrement(), lookupTable.vector(word));
+        INDArray mean = null;
+
+        try {
+            INDArray allWords = Nd4j.create(cnt.get(), lookupTable.layerSize());
+
+            cnt.set(0);
+            for (String word : documentAsTokens) {
+                if (vocabCache.containsWord(word))
+                    allWords.putRow(cnt.getAndIncrement(), lookupTable.vector(word));
+            }
+
+            mean = allWords.mean(0);
+
+        } catch (IllegalArgumentException ie) {
+            System.out.println(ie.getMessage());
         }
-
-        INDArray mean = allWords.mean(0);
-
         return mean;
     }
 }

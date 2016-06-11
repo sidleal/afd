@@ -27,10 +27,20 @@ public class Word2VecTryTwo {
 
     private static final Logger log = LoggerFactory.getLogger(Word2VecTryTwo.class);
 
-    public static void main( String... args ) throws Exception {
+    public static void main( String... args) throws Exception {
+        String ret = "";
+        for (int i = 0; i < 10; i++) {
+            ret += run();
+        }
+
+        log.info("-------------------------------------------------------");
+        log.info(ret);
+    }
+
+    public static String run() throws Exception {
 
         JSONArray listaGeral = new JSONArray();
-        for (int i = 1; i <= 9; i++) {
+        for (int i = 9; i <= 9; i++) {
             String filePath = new ClassPathResource("corpus/uoleducacao_redacoes_0" + i + ".json").getFile().getAbsolutePath();
             JSONObject root = new JSONObject(IOUtils.toString(new FileInputStream(filePath)));
             JSONArray lista = root.getJSONArray("redacoes");
@@ -45,7 +55,7 @@ public class Word2VecTryTwo {
 
         Random rand = new Random();
         int listSize = listaGeral.length();
-        int sampleSize = listSize * 10 / 100;
+        int sampleSize = listSize * 20 / 100;
         List<Integer> samples = new ArrayList<Integer>();
         for (int i = 0; i < sampleSize; i++) {
             int  n = rand.nextInt(listSize);
@@ -76,7 +86,7 @@ public class Word2VecTryTwo {
                 .learningRate(0.025)
                 .minLearningRate(0.001)
                 .batchSize(1000)
-                .epochs(5)
+                .epochs(20)
                 .iterate(iterator)
                 .trainWordVectors(true)
                 .tokenizerFactory(t)
@@ -98,23 +108,28 @@ public class Word2VecTryTwo {
         MeansBuilder meansBuilder = new MeansBuilder((InMemoryLookupTable<VocabWord>) paragraphVectors.getLookupTable(), t);
         LabelSeeker seeker = new LabelSeeker(iterator.getLabelsSource().getLabels(), (InMemoryLookupTable<VocabWord>)  paragraphVectors.getLookupTable());
 
+        String ret = "";
         while (unlabeledIterator.hasNextDocument()) {
             LabelledDocument document = unlabeledIterator.nextDocument();
 
             INDArray documentAsCentroid = meansBuilder.documentAsVector(document);
-            List<Pair<String, Double>> scores = seeker.getScores(documentAsCentroid);
+            if (documentAsCentroid != null) {
+                List<Pair<String, Double>> scores = seeker.getScores(documentAsCentroid);
 
-            Collections.sort(scores, new Comparator<Pair<String, Double>>() {
-                public int compare(Pair<String, Double> o1, Pair<String, Double> o2) {
-                    return o2.getSecond().compareTo(o1.getSecond());
-                }
-            });
+                Collections.sort(scores, new Comparator<Pair<String, Double>>() {
+                    public int compare(Pair<String, Double> o1, Pair<String, Double> o2) {
+                        return o2.getSecond().compareTo(o1.getSecond());
+                    }
+                });
 
-            log.info("Document '" + document.getLabel() + "' falls into the following categories: ");
-            log.info("        " + scores.get(0).getFirst() + ": " + scores.get(0).getSecond());
-            log.info("        " + scores.get(1).getFirst() + ": " + scores.get(1).getSecond());
-            log.info("        " + scores.get(2).getFirst() + ": " + scores.get(2).getSecond());
+                log.info("Document '" + document.getLabel() + "' falls into the following categories: ");
+                log.info("        " + scores.get(0).getFirst() + ": " + scores.get(0).getSecond());
+                log.info("        " + scores.get(1).getFirst() + ": " + scores.get(1).getSecond());
+                log.info("        " + scores.get(2).getFirst() + ": " + scores.get(2).getSecond());
 
+                ret += document.getLabel() + " --> " + scores.get(0).getFirst() + "\n";
+            }
         }
+        return ret;
     }
 }
