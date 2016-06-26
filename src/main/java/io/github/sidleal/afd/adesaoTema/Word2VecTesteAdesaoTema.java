@@ -1,5 +1,7 @@
 package io.github.sidleal.afd.adesaoTema;
 
+import org.apache.commons.collections.iterators.ListIteratorWrapper;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.io.IOUtils;
 import org.canova.api.util.ClassPathResource;
 import org.deeplearning4j.berkeley.Pair;
@@ -50,7 +52,7 @@ public class Word2VecTesteAdesaoTema {
 
         JSONArray listaGeral = new JSONArray();
         for (int i = 1; i <= 9; i++) {
-            String filePath = new ClassPathResource("corpus/uoleducacao_redacoes_0" + i + ".json").getFile().getAbsolutePath();
+            String filePath = new ClassPathResource("corpus/uoleducacao_redacoes_" + String.format("%02d", i) + ".json").getFile().getAbsolutePath();
             JSONObject root = new JSONObject(IOUtils.toString(new FileInputStream(filePath)));
             JSONArray lista = root.getJSONArray("redacoes");
             String tema = root.getString("tema");
@@ -68,29 +70,54 @@ public class Word2VecTesteAdesaoTema {
         }
         log.info("total redacoes: " + listaGeral.length());
 
-        Random rand = new Random();
         int listSize = listaGeral.length();
-        int sampleSize = listSize * 10 / 100;
         List<Integer> samples = new ArrayList<Integer>();
-        for (int i = 0; i < sampleSize; i++) {
-            int  n = rand.nextInt(listSize);
-            samples.add(n);
-        }
-        log.info("total samples: " + samples.size());
-
         JSONArray listaTreino = new JSONArray();
         JSONArray listaTeste = new JSONArray();
 
+        Map<String, Integer> summaryTreino = new HashMap<String, Integer>();
+        Map<String, Integer> summaryTeste = new HashMap<String, Integer>();
+
+        Map<String, List<Integer>> mapSum = new HashMap<String, List<Integer>>();
         for (int i = 0; i < listSize; i++) {
             JSONObject item = listaGeral.getJSONObject(i);
+            String tema = item.getString("tema");
+            if (mapSum.containsKey(tema)) {
+                mapSum.get(tema).add(i);
+            } else {
+                List itens = new ArrayList<Integer>();
+                itens.add(i);
+                mapSum.put(tema, itens);
+            }
+        }
+
+        for (List<Integer> mapItem : mapSum.values()) {
+            int n = randomize(mapItem.size());
+            samples.add(mapItem.get(n));
+        }
+
+        for (int i = 0; i < listSize; i++) {
+            JSONObject item = listaGeral.getJSONObject(i);
+            String tema = item.getString("tema");
             if (samples.contains(i)) {
                 listaTeste.put(item);
+                summarize(summaryTeste, tema);
             } else {
                 listaTreino.put(item);
+                summarize(summaryTreino, tema);
             }
         }
 
         log.info("Total de redacoes treino: " + listaTreino.length() + " - Teste: " + listaTeste.length());
+        log.info("--------------------------------------------------------------------");
+        log.info(padRight("Tema", 60) + " - " + padLeft("Treino", 15) + " - " + padLeft("Teste", 15));
+        for (String key : summaryTreino.keySet()) {
+            if (!summaryTeste.containsKey(key)) {
+                summaryTeste.put(key, 0);
+            }
+            log.info(padRight(key, 60) + " - " + padLeft(summaryTreino.get(key).toString(), 15) + " - " + padLeft(summaryTeste.get(key).toString(), 15));
+        }
+        log.info("--------------------------------------------------------------------");
 
         LabelAwareIterator iterator = new JSONLabelIteratorTema(listaTreino);
 
@@ -146,5 +173,27 @@ public class Word2VecTesteAdesaoTema {
             }
         }
         return ret;
+    }
+
+    private static int randomize(Integer max) {
+        Random rand = new Random();
+        int  n = rand.nextInt(max);
+    return n;
+}
+
+    private static void summarize(Map<String, Integer> map, String key) {
+        if (map.containsKey(key)) {
+            map.put(key, map.get(key) + 1);
+        } else {
+            map.put(key, 1);
+        }
+    }
+
+    private static String padLeft(String s, int n) {
+        return String.format("%1$" + n + "s", s);
+    }
+
+    private static String padRight(String s, int n) {
+        return String.format("%1$-" + n + "s", s);
     }
 }
